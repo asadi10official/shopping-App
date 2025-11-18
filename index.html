@@ -1,13 +1,239 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shopping App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Paradise Nursery — Static Website</title>
+  <meta name="description" content="Small static plant shop demo with products and cart using localStorage" />
+  <style>
+    /* Simple, modern CSS — single file, responsive */
+    :root{
+      --bg:#f7fbf7; --card:#ffffff; --muted:#6b7280; --accent:#16a34a;
+      --glass: rgba(255,255,255,0.7);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#0f172a;background:linear-gradient(180deg,var(--bg),#ecfdf5);}
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{font-weight:800;font-size:20px;letter-spacing:-0.5px}
+    nav a{margin-left:12px;text-decoration:none;color:#0f172a;padding:8px;border-radius:8px}
+    nav a:hover{background:#eefaf0}
+
+    .hero{display:grid;grid-template-columns:1fr;gap:18px;align-items:center;padding:28px;border-radius:16px;background:linear-gradient(90deg,var(--glass), rgba(255,255,255,0.9));box-shadow:0 6px 20px rgba(16,24,40,0.06)}
+    .hero h1{margin:0;font-size:32px}
+    .hero p{margin:8px 0 0;color:var(--muted)}
+    .btn{display:inline-block;background:var(--accent);color:white;padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600}
+
+    .grid{display:grid;grid-template-columns:repeat(1,1fr);gap:18px;margin-top:20px}
+    @media(min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:980px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+    .card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(2,6,23,0.06);display:flex;flex-direction:column}
+    .thumb{height:180px;background-size:cover;background-position:center}
+    .card-body{padding:12px;flex:1;display:flex;flex-direction:column}
+    .card h3{margin:0 0 6px;font-size:18px}
+    .muted{color:var(--muted);font-size:13px}
+    .price{margin-top:auto;font-weight:700;font-size:18px}
+    .card .actions{display:flex;gap:8px;margin-top:12px}
+
+    .cart-btn{position:relative}
+    .badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:white;padding:4px 7px;border-radius:999px;font-size:12px}
+
+    footer{margin-top:30px;padding:18px 0;color:var(--muted);text-align:center}
+
+    /* Cart drawer */
+    .drawer{position:fixed;right:20px;top:70px;width:360px;max-width:95vw;background:var(--card);border-radius:12px;box-shadow:0 20px 60px rgba(2,6,23,0.2);transform:translateX(120%);transition:transform .28s ease-in-out;z-index:60}
+    .drawer.open{transform:translateX(0)}
+    .drawer .head{display:flex;align-items:center;justify-content:space-between;padding:14px;border-bottom:1px solid #eef2f7}
+    .drawer .list{max-height:60vh;overflow:auto;padding:12px}
+    .drawer .item{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px}
+    .drawer .item img{width:64px;height:64px;object-fit:cover;border-radius:8px}
+    .drawer .foot{padding:12px;border-top:1px solid #eef2f7}
+
+    .qty{display:inline-flex;align-items:center;border:1px solid #e6eef0;border-radius:8px;overflow:hidden}
+    .qty button{background:transparent;border:0;padding:8px 10px;cursor:pointer}
+    .qty span{min-width:34px;text-align:center;display:inline-block}
+
+    .empty{padding:36px;text-align:center;color:var(--muted)}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">Paradise Nursery</div>
+      <nav>
+        <a href="#home">Home</a>
+        <a href="#products">Products</a>
+        <a href="#contact">Contact</a>
+        <a href="#" id="openCart" class="cart-btn">Cart <span class="badge" id="cartCount">0</span></a>
+      </nav>
+    </header>
+
+    <section id="home" class="hero">
+      <div>
+        <h1>Bring green life into your home</h1>
+        <p>Small static demo shop — no frameworks. Works by opening <code>index.html</code> in your browser. Cart persists with localStorage.</p>
+        <p style="margin-top:12px"><a href="#products" class="btn">Browse Plants</a></p>
+      </div>
+      <div style="text-align:right">
+        <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=abc123" alt="plants" style="width:320px;max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.06)">
+      </div>
+    </section>
+
+    <section id="products" style="margin-top:18px">
+      <h2 style="margin:0 0 12px">Our Plants</h2>
+      <div class="grid" id="productGrid">
+        <!-- products rendered by JS -->
+      </div>
+    </section>
+
+    <footer>
+      <div class="small">© Paradise Nursery — Demo static site • Built with plain HTML/CSS/JS</div>
+    </footer>
+  </div>
+
+  <aside id="cartDrawer" class="drawer" aria-hidden="true">
+    <div class="head">
+      <strong>Your cart</strong>
+      <div>
+        <button id="clearCart" title="Clear cart" style="background:transparent;border:0;cursor:pointer;padding:6px">Clear</button>
+        <button id="closeCart" style="background:transparent;border:0;cursor:pointer;padding:6px">✕</button>
+      </div>
+    </div>
+    <div class="list" id="cartList">
+      <!-- cart rows -->
+    </div>
+    <div class="foot">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="muted">Subtotal</div>
+        <div id="subtotal" style="font-weight:700">$0.00</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="checkout" class="btn" style="flex:1">Checkout</button>
+        <button id="closeCart2" style="flex:1;background:#eefaf0;border-radius:10px;border:1px solid #e6f4ea;padding:10px;cursor:pointer">Continue</button>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    // =====================
+    // Static site JS
+    // =====================
+
+    const PRODUCTS = [
+      {id:'p1', name:'Monstera Deliciosa', price:24.99, category:'Foliage', image:'https://images.unsplash.com/photo-1617191519076-c7f6b9f5b6c2?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4a1b3f5a5f7a6d2f1c9a9b1d6f2b3c4d'},
+      {id:'p2', name:'Snake Plant (Sansevieria)', price:18.50, category:'Low Light', image:'https://images.unsplash.com/photo-1496318447583-f524534e9ce1?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=7b8c9d3c4a1b2c3d4e5f6a7b8c9d0e1f'},
+      {id:'p3', name:'Fiddle Leaf Fig', price:39.00, category:'Foliage', image:'https://images.unsplash.com/photo-1487412947147-5cebf100ffc0?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d'},
+      {id:'p4', name:'Pothos (Golden)', price:12.00, category:'Trailing', image:'https://images.unsplash.com/photo-1560184897-6d3f5b1d1b6f?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e'},
+      {id:'p5', name:'ZZ Plant', price:22.00, category:'Low Light', image:'https://images.unsplash.com/photo-1544033521-1a0b3f6d4c9b?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f'},
+      {id:'p6', name:'Aloe Vera', price:9.99, category:'Succulent', image:'https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a'}
+    ];
+
+    const STORAGE_KEY = 'paradise_cart_static_v1';
+
+    function saveCart(cart){localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));}
+    function loadCart(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')}catch(e){return {}}}
+
+    // render products
+    const grid = document.getElementById('productGrid');
+    function renderProducts(){
+      grid.innerHTML = '';
+      PRODUCTS.forEach(p=>{
+        const el = document.createElement('article');
+        el.className = 'card';
+        el.innerHTML = `
+          <div class="thumb" style="background-image:url('${p.image}')"></div>
+          <div class="card-body">
+            <h3>${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</h3>
+            <div class="muted">${p.category}</div>
+            <div class="price">$${p.price.toFixed(2)}</div>
+            <div class="actions">
+              <div style="flex:1"></div>
+              <button class="btn" data-add="${p.id}">Add to Cart</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(el);
+      });
+    }
+
+    // cart logic
+    let cart = loadCart();
+
+    function getCount(){return Object.values(cart).reduce((s,n)=>s+(Number(n)||0),0)}
+    function getSubtotal(){return Object.entries(cart).reduce((s,[id,q])=>{const p=PRODUCTS.find(x=>x.id===id);return s + (p? p.price * q : 0)},0)}
+
+    function updateCartBadge(){document.getElementById('cartCount').textContent = getCount();}
+
+    function addToCart(id, qty=1){cart[id] = (cart[id] || 0) + qty; saveCart(cart); updateCartBadge(); renderCartList();}
+    function setQty(id, qty){if(qty<=0) delete cart[id]; else cart[id]=qty; saveCart(cart); updateCartBadge(); renderCartList();}
+    function removeFromCart(id){delete cart[id]; saveCart(cart); updateCartBadge(); renderCartList();}
+    function clearCart(){cart = {}; saveCart(cart); updateCartBadge(); renderCartList();}
+
+    // render cart drawer
+    const drawer = document.getElementById('cartDrawer');
+    const cartList = document.getElementById('cartList');
+    const subtotalEl = document.getElementById('subtotal');
+
+    function renderCartList(){
+      cartList.innerHTML = '';
+      const entries = Object.entries(cart);
+      if(entries.length===0){cartList.innerHTML = '<div class="empty">Your cart is empty</div>'; subtotalEl.textContent = '$0.00'; return}
+      entries.forEach(([id,q])=>{
+        const p = PRODUCTS.find(x=>x.id===id);
+        if(!p) return;
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <img src="${p.image}" alt="${p.name}">
+          <div style="flex:1">
+            <div style="font-weight:700">${p.name}</div>
+            <div class="small muted">$${p.price.toFixed(2)} each</div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <div class="qty">
+                <button data-dec="${p.id}">−</button>
+                <span>${q}</span>
+                <button data-inc="${p.id}">+</button>
+              </div>
+              <button data-remove="${p.id}" style="background:transparent;border:0;color:#ef4444;cursor:pointer">Remove</button>
+            </div>
+          </div>
+        `;
+        cartList.appendChild(row);
+      });
+      subtotalEl.textContent = '$' + getSubtotal().toFixed(2);
+    }
+
+    // event delegation
+    document.body.addEventListener('click', (e)=>{
+      const add = e.target.closest('[data-add]');
+      if(add){addToCart(add.getAttribute('data-add')||add.dataset.add); return}
+
+      const inc = e.target.closest('[data-inc]');
+      if(inc){const id=inc.getAttribute('data-inc'); setQty(id, (cart[id]||0)+1); return}
+      const dec = e.target.closest('[data-dec]');
+      if(dec){const id=dec.getAttribute('data-dec'); setQty(id, (cart[id]||0)-1); return}
+      const rem = e.target.closest('[data-remove]');
+      if(rem){removeFromCart(rem.getAttribute('data-remove')); return}
+    });
+
+    // cart open/close
+    document.getElementById('openCart').addEventListener('click', (ev)=>{ev.preventDefault(); openDrawer();});
+    document.getElementById('closeCart').addEventListener('click', ()=>closeDrawer());
+    document.getElementById('closeCart2').addEventListener('click', ()=>closeDrawer());
+    document.getElementById('clearCart').addEventListener('click', ()=>{if(confirm('Clear cart?')) clearCart();});
+    document.getElementById('checkout').addEventListener('click', ()=>{alert('Checkout demo — no payment. Subtotal: $' + getSubtotal().toFixed(2));});
+
+    function openDrawer(){drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); renderCartList();}
+    function closeDrawer(){drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true');}
+
+    // initial render
+    renderProducts(); updateCartBadge(); renderCartList();
+
+    // keyboard: Esc to close
+    document.addEventListener('keydown', (e)=>{if(e.key==='Escape') closeDrawer()});
+
+  </script>
+</body>
 </html>
